@@ -1,16 +1,53 @@
-# chili_scan_app
+# 🌶️ Chili Scan App
 
-A new Flutter project.
+Aplikasi Flutter untuk membantu petani dan pelaku agribisnis menilai kematangan cabai secara cepat melalui pemindaian kamera atau galeri. UI dibuat modern dengan dukungan Riverpod untuk state management, `go_router` untuk navigasi deklaratif, dan `dio` untuk komunikasi API.
 
-## Getting Started
+## ✨ Fitur Utama
 
-This project is a starting point for a Flutter application.
+- **Scan Cepat** – Mulai pemindaian cabai langsung dari kamera atau pilih foto dari galeri.
+- **Dashboard Interaktif** – Kartu hero, statistik ringkas, dan CTA utama untuk memantau aktivitas terbaru.
+- **Riwayat Scan** – Daftar histori dengan status warna, deskripsi, dan waktu pembaruan agar keputusan panen lebih akurat.
+- **Desain Responsif** – Layout adaptif dengan tema warna konsisten (`primaryColor`, `backgroundColor`).
+- **Arsitektur Modular** – Pemisahan jelas antara halaman, widget, layanan API, dan konstanta.
 
-A few resources to get you started if this is your first Flutter project:
+## 🧱 Struktur Proyek
 
-- [Lab: Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Cookbook: Useful Flutter samples](https://docs.flutter.dev/cookbook)
+```
+lib/
+├─ common/
+│  ├─ constants/      # warna, teks, tema
+│  ├─ exceptions/     # custom exception untuk API/service
+│  └─ utils/          # helper umum
+├─ pages/             # layar: home, scanner, auth, history, dsb
+├─ providers/         # Riverpod providers (state, controller)
+├─ services/          # api_client.dart, api_service.dart
+└─ widgets/           # widget reusable (form input, dsb)
+```
 
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+## 🚀 Menjalankan Aplikasi
+
+1. Pastikan Flutter SDK ≥ 3.10 terpasang dan `flutter doctor` bersih.
+2. Pasang dependency:
+   ```bash
+   flutter pub get
+   ```
+3. Jalankan aplikasi pada emulator atau perangkat fisik:
+   ```bash
+   flutter run
+   ```
+
+## 🧪 Testing
+
+Jalankan widget/unit test bawaan:
+
+```bash
+flutter test
+```
+
+## 🔧 Teknologi Kunci
+
+- Flutter & Dart 3
+- Riverpod 3 (`flutter_riverpod`, `riverpod_lint`)
+- `go_router` untuk routing
+- `dio` untuk networking
+- Google Fonts & Material 3 widgets
