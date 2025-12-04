@@ -17,7 +17,7 @@ class ApiService {
   }
 }
 
-final apiServiceProvider = Provider<ApiService>((ref) {
-  final dio = ref.watch(apiClientProcider);
+final apiServiceProvider = Provider.autoDispose<ApiService>((ref) {
+  final dio = ref.watch(apiClientProvider);
   return ApiService(dio);
 });

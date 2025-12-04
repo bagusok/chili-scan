@@ -1,17 +1,26 @@
 import 'package:chili_scan_app/common/constants/colors.dart';
+import 'package:chili_scan_app/providers/auth_notifier.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
-class MyAccountPage extends StatefulWidget {
+class MyAccountPage extends ConsumerStatefulWidget {
   const MyAccountPage({super.key});
 
   @override
-  State<MyAccountPage> createState() => _MyAccountPageState();
+  ConsumerState<MyAccountPage> createState() => _MyAccountPageState();
 }
 
-class _MyAccountPageState extends State<MyAccountPage> {
+class _MyAccountPageState extends ConsumerState<MyAccountPage> {
+  void _logout() async {
+    await ref.read(authNotifierProvider.notifier).logout();
+    context.go('/login');
+  }
+
   @override
   Widget build(BuildContext context) {
     final textTheme = Theme.of(context).textTheme;
+    final auth = ref.watch(authNotifierProvider);
 
     return Scaffold(
       backgroundColor: Colors.white,
@@ -35,14 +44,21 @@ class _MyAccountPageState extends State<MyAccountPage> {
           child: ListView(
             padding: const EdgeInsets.fromLTRB(24, 16, 24, 32),
             children: [
-              _buildProfileHeader(textTheme),
+              auth.when(
+                data: (s) => _buildProfileHeader(
+                  textTheme,
+                  s.user?.userMetadata['name'] ?? 'User',
+                ),
+                error: (e, _) => Text('Error: $e'),
+                loading: () => const Center(child: CircularProgressIndicator()),
+              ),
               const SizedBox(height: 24),
               // _buildInfoCard(textTheme),
               // const SizedBox(height: 24),
               _buildSettingsList(),
               const SizedBox(height: 32),
               ElevatedButton.icon(
-                onPressed: () {},
+                onPressed: () => {_logout()},
                 icon: const Icon(Icons.logout_rounded),
                 label: const Text('Keluar dari Akun'),
                 style: ElevatedButton.styleFrom(
@@ -62,7 +78,7 @@ class _MyAccountPageState extends State<MyAccountPage> {
     );
   }
 
-  Widget _buildProfileHeader(TextTheme textTheme) {
+  Widget _buildProfileHeader(TextTheme textTheme, String userName) {
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
@@ -93,7 +109,7 @@ class _MyAccountPageState extends State<MyAccountPage> {
               spacing: 6,
               children: [
                 Text(
-                  'Bagusokz',
+                  userName,
                   style: textTheme.titleLarge?.copyWith(
                     color: Colors.white,
                     fontWeight: FontWeight.bold,

@@ -1,15 +1,17 @@
 import 'package:chili_scan_app/common/constants/colors.dart';
+import 'package:chili_scan_app/providers/auth_notifier.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
-class HomePage extends StatefulWidget {
+class HomePage extends ConsumerStatefulWidget {
   const HomePage({super.key});
 
   @override
-  State<HomePage> createState() => _HomePageState();
+  ConsumerState<HomePage> createState() => _HomePageState();
 }
 
-class _HomePageState extends State<HomePage> {
+class _HomePageState extends ConsumerState<HomePage> {
   final List<_ScanHistoryItem> _historyItems = const [
     _ScanHistoryItem(
       title: 'Matang',
@@ -44,6 +46,7 @@ class _HomePageState extends State<HomePage> {
   @override
   Widget build(BuildContext context) {
     final textTheme = Theme.of(context).textTheme;
+    final auth = ref.watch(authNotifierProvider);
 
     return Scaffold(
       backgroundColor: Colors.white,
@@ -63,7 +66,15 @@ class _HomePageState extends State<HomePage> {
               spacing: 24,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                _buildHeroHeader(textTheme),
+                auth.when(
+                  data: (s) => _buildHeroHeader(
+                    textTheme,
+                    s.user?.userMetadata['name'] ?? 'User',
+                  ),
+                  loading: () =>
+                      const Center(child: CircularProgressIndicator()),
+                  error: (e, _) => Text('Error: $e'),
+                ),
                 _buildQuickActions(),
                 _buildStatsRow(),
                 _buildSectionHeader(
@@ -82,7 +93,7 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
-  Widget _buildHeroHeader(TextTheme textTheme) {
+  Widget _buildHeroHeader(TextTheme textTheme, String userName) {
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
@@ -118,7 +129,7 @@ class _HomePageState extends State<HomePage> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'Hi, Bagusokz!',
+                      'Hi, $userName',
                       style: textTheme.titleLarge?.copyWith(
                         color: Colors.white,
                         fontWeight: FontWeight.bold,

@@ -1,37 +1,63 @@
 import 'package:chili_scan_app/common/constants/colors.dart';
+import 'package:chili_scan_app/common/utils/toast.dart';
+import 'package:chili_scan_app/models/universal_result.dart';
+import 'package:chili_scan_app/providers/auth_notifier.dart';
 import 'package:chili_scan_app/widgets/form_input.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
-class RegisterPage extends StatefulWidget {
+class RegisterPage extends ConsumerStatefulWidget {
   const RegisterPage({super.key});
 
   @override
-  State<RegisterPage> createState() => _RegisterPageState();
+  ConsumerState<RegisterPage> createState() => _RegisterPageState();
 }
 
-class _RegisterPageState extends State<RegisterPage> {
+class _RegisterPageState extends ConsumerState<RegisterPage> {
   final TextEditingController _nameController = TextEditingController();
   final TextEditingController _emailController = TextEditingController();
-  final TextEditingController _usernameController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
-  final TextEditingController _confirmPasswordController =
-      TextEditingController();
-  bool _agreeToPolicy = true;
+
+  void _register() async {
+    final email = _emailController.text.trim();
+    final password = _passwordController.text.trim();
+    final name = _nameController.text.trim();
+
+    if (email.isEmpty || password.isEmpty || name.isEmpty) {
+      Toast.error(
+        title: "Validation Error",
+        message: "Please fill in all fields.",
+      );
+      return;
+    }
+
+    final response = await ref
+        .read(authNotifierProvider.notifier)
+        .register(email: email, password: password, name: name);
+
+    if (response is AppFailure) {
+      Toast.error(title: "Registration Failed", message: response.message);
+    } else {
+      Toast.success(
+        title: "Success",
+        message: "Registration successful. Please log in.",
+      );
+      context.replace('/login');
+    }
+  }
 
   @override
   void dispose() {
-    _nameController.dispose();
     _emailController.dispose();
-    _usernameController.dispose();
     _passwordController.dispose();
-    _confirmPasswordController.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
     final textTheme = Theme.of(context).textTheme;
+    final auth = ref.watch(authNotifierProvider);
 
     return Scaffold(
       backgroundColor: Colors.white,
@@ -101,7 +127,7 @@ class _RegisterPageState extends State<RegisterPage> {
                         spacing: 20,
                         children: [
                           FormInput(
-                            label: 'Nama Lengkap',
+                            label: 'Name',
                             hintText: 'Masukkan nama lengkap',
                             controller: _nameController,
                           ),
@@ -111,46 +137,21 @@ class _RegisterPageState extends State<RegisterPage> {
                             controller: _emailController,
                           ),
                           FormInput(
-                            label: 'Username',
-                            hintText: 'Masukkan username',
-                            controller: _usernameController,
-                          ),
-                          FormInput(
                             label: 'Password',
                             hintText: 'Buat password',
                             isPassword: true,
                             controller: _passwordController,
                           ),
-                          FormInput(
-                            label: 'Konfirmasi Password',
-                            hintText: 'Ulangi password',
-                            isPassword: true,
-                            controller: _confirmPasswordController,
-                          ),
-                          Row(
-                            children: [
-                              Checkbox(
-                                value: _agreeToPolicy,
-                                onChanged: (value) {
-                                  if (value == null) return;
-                                  setState(() => _agreeToPolicy = value);
-                                },
-                              ),
-                              Expanded(
-                                child: Text(
-                                  'Saya menyetujui kebijakan privasi dan ketentuan penggunaan Chili Scan.',
-                                  style: textTheme.bodySmall?.copyWith(
-                                    color: Colors.black54,
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
+
                           Column(
                             spacing: 12,
                             children: [
                               ElevatedButton(
-                                onPressed: () {},
+                                onPressed: () {
+                                  if (!auth.isLoading) {
+                                    _register();
+                                  }
+                                },
                                 style: ElevatedButton.styleFrom(
                                   minimumSize: const Size(double.infinity, 52),
                                   backgroundColor: primaryColor,
@@ -160,7 +161,14 @@ class _RegisterPageState extends State<RegisterPage> {
                                   ),
                                   elevation: 0,
                                 ),
-                                child: const Text('Daftar Sekarang'),
+                                child: auth.isLoading
+                                    ? CircularProgressIndicator(
+                                        valueColor:
+                                            AlwaysStoppedAnimation<Color>(
+                                              Colors.white,
+                                            ),
+                                      )
+                                    : const Text('Daftar Sekarang'),
                               ),
                               OutlinedButton(
                                 onPressed: () {

@@ -5,12 +5,17 @@ import 'package:chili_scan_app/pages/login_page.dart';
 import 'package:chili_scan_app/pages/my_account.dart';
 import 'package:chili_scan_app/pages/register_page.dart';
 import 'package:chili_scan_app/pages/scanner_page.dart';
+import 'package:chili_scan_app/providers/auth_notifier.dart';
+import 'package:chili_scan_app/providers/auth_refresh_listenable.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 final goRouterProvider = Provider((ref) {
+  final a = ref.read(authChangeNotifierProvider);
+
   return GoRouter(
     initialLocation: '/login',
+    refreshListenable: a,
     routes: [
       StatefulShellRoute.indexedStack(
         builder: (context, state, navigationShell) {
@@ -54,5 +59,20 @@ final goRouterProvider = Provider((ref) {
 
       GoRoute(path: '/scanner', builder: (_, __) => const ScannerPage()),
     ],
+    redirect: (context, state) {
+      final auth = ref.read(authNotifierProvider);
+      final isLoggedIn = auth.value?.isLoggedIn ?? false;
+      final goingToLogin =
+          state.matchedLocation == '/login' ||
+          state.matchedLocation == '/register';
+
+      if (!isLoggedIn && !goingToLogin) {
+        return '/login';
+      } else if (isLoggedIn && goingToLogin) {
+        return '/home';
+      }
+
+      return null;
+    },
   );
 });

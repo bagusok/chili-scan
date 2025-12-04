@@ -1,22 +1,49 @@
 import 'package:chili_scan_app/common/constants/colors.dart';
+import 'package:chili_scan_app/common/utils/toast.dart';
+import 'package:chili_scan_app/models/universal_result.dart';
+import 'package:chili_scan_app/providers/auth_notifier.dart';
 import 'package:chili_scan_app/widgets/form_input.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
-class LoginPage extends StatefulWidget {
+class LoginPage extends ConsumerStatefulWidget {
   const LoginPage({super.key});
 
   @override
-  State<LoginPage> createState() => _LoginPageState();
+  ConsumerState<LoginPage> createState() => _LoginPageState();
 }
 
-class _LoginPageState extends State<LoginPage> {
-  final TextEditingController _usernameController = TextEditingController();
+class _LoginPageState extends ConsumerState<LoginPage> {
+  final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
+
+  void _login() async {
+    final email = _emailController.text.trim();
+    final password = _passwordController.text.trim();
+
+    if (email.isEmpty || password.isEmpty) {
+      Toast.error(
+        title: "Validation Error",
+        message: "Please fill in all fields.",
+      );
+      return;
+    }
+    final response = await ref
+        .read(authNotifierProvider.notifier)
+        .login(email: email, password: password);
+
+    if (response is AppFailure) {
+      Toast.error(title: "Login Failed", message: response.message);
+    } else {
+      Toast.success(title: "Success", message: "Login successful");
+      context.go('/home');
+    }
+  }
 
   @override
   void dispose() {
-    _usernameController.dispose();
+    _emailController.dispose();
     _passwordController.dispose();
     super.dispose();
   }
@@ -24,6 +51,7 @@ class _LoginPageState extends State<LoginPage> {
   @override
   Widget build(BuildContext context) {
     final textTheme = Theme.of(context).textTheme;
+    final auth = ref.watch(authNotifierProvider);
 
     return Scaffold(
       backgroundColor: Colors.white,
@@ -93,9 +121,9 @@ class _LoginPageState extends State<LoginPage> {
                         spacing: 20,
                         children: [
                           FormInput(
-                            label: 'Username',
-                            hintText: 'Masukkan username',
-                            controller: _usernameController,
+                            label: 'Email',
+                            hintText: 'Masukkan email',
+                            controller: _emailController,
                           ),
                           FormInput(
                             label: 'Password',
@@ -115,7 +143,9 @@ class _LoginPageState extends State<LoginPage> {
                             children: [
                               ElevatedButton(
                                 onPressed: () {
-                                  context.replace('/home');
+                                  if (!auth.isLoading) {
+                                    _login();
+                                  }
                                 },
                                 style: ElevatedButton.styleFrom(
                                   minimumSize: const Size(double.infinity, 52),
@@ -126,7 +156,14 @@ class _LoginPageState extends State<LoginPage> {
                                   ),
                                   elevation: 0,
                                 ),
-                                child: const Text('Masuk'),
+                                child: auth.isLoading
+                                    ? CircularProgressIndicator(
+                                        valueColor:
+                                            AlwaysStoppedAnimation<Color>(
+                                              Colors.white,
+                                            ),
+                                      )
+                                    : const Text('Masuk'),
                               ),
                               OutlinedButton(
                                 onPressed: () {
