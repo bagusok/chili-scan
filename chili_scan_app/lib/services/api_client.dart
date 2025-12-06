@@ -7,7 +7,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 final apiClientProvider = Provider.autoDispose<Dio>((ref) {
   final dio = Dio(BaseOptions(baseUrl: Env.apiUrl));
-  final supabaseProvider = ref.read(supabase);
+  final supabaseProvider = ref.watch(supabase);
 
   final session = supabaseProvider.auth.currentSession?.accessToken;
 
@@ -23,6 +23,7 @@ class AuthInterceptor extends Interceptor {
 
   @override
   void onRequest(RequestOptions options, RequestInterceptorHandler handler) {
+    log("TOken: $token");
     if (token != null && token!.isNotEmpty) {
       options.headers['Authorization'] = 'Bearer $token';
     }

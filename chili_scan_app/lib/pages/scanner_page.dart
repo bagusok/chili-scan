@@ -1,17 +1,20 @@
 import 'package:chili_scan_app/common/constants/colors.dart';
+import 'package:chili_scan_app/providers/get_predict_history_notifier.dart';
+import 'package:chili_scan_app/services/predict_service.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
 
-class ScannerPage extends StatefulWidget {
+class ScannerPage extends ConsumerStatefulWidget {
   const ScannerPage({super.key});
 
   @override
-  State<ScannerPage> createState() => _ScannerPageState();
+  ConsumerState<ScannerPage> createState() => _ScannerPageState();
 }
 
-class _ScannerPageState extends State<ScannerPage> {
+class _ScannerPageState extends ConsumerState<ScannerPage> {
   final ImagePicker _imagePicker = ImagePicker();
   XFile? _selectedImage;
   String? _selectedImageLabel;
@@ -51,12 +54,25 @@ class _ScannerPageState extends State<ScannerPage> {
 
   Future<void> _sendToServer() async {
     if (_selectedImage == null || _isUploading) return;
-    setState(() => _isUploading = true);
-    await Future.delayed(const Duration(seconds: 2));
-    setState(() => _isUploading = false);
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Foto terkirim. Tunggu analisis server.')),
-    );
+    try {
+      setState(() {
+        _isUploading = true;
+      });
+
+      final apiService = ref.read(predictionServiceProvider);
+      final response = await apiService.predict(image: _selectedImage!);
+
+      ref.read(getPredictHistoryNotifierProvider.notifier).refresh();
+
+      _showSnackBar('Gambar berhasil dikirim ke server!');
+      context.go('/history/detail/${response.id}', extra: response);
+    } catch (e) {
+      _showSnackBar('Gagal mengirim gambar: $e', isError: true);
+    } finally {
+      setState(() {
+        _isUploading = false;
+      });
+    }
   }
 
   void _showSnackBar(String message, {bool isError = false}) {

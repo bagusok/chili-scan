@@ -1,8 +1,10 @@
 import 'package:chili_scan_app/bottom_navigation.dart';
+import 'package:chili_scan_app/models/predict_history_model.dart';
 import 'package:chili_scan_app/pages/history_page.dart';
 import 'package:chili_scan_app/pages/home_page.dart';
 import 'package:chili_scan_app/pages/login_page.dart';
 import 'package:chili_scan_app/pages/my_account.dart';
+import 'package:chili_scan_app/pages/prediction_detail_page.dart';
 import 'package:chili_scan_app/pages/register_page.dart';
 import 'package:chili_scan_app/pages/scanner_page.dart';
 import 'package:chili_scan_app/providers/auth_notifier.dart';
@@ -37,7 +39,26 @@ final goRouterProvider = Provider((ref) {
             routes: [
               GoRoute(
                 path: '/history',
-                builder: (context, state) => HistoryPage(),
+                builder: (context, state) => const HistoryPage(),
+                routes: [
+                  GoRoute(
+                    path: 'detail/:id',
+                    builder: (context, state) {
+                      final id = state.pathParameters['id'];
+                      if (id == null || id.isEmpty) {
+                        return const PredictionDetailPage.missing();
+                      }
+
+                      final history = state.extra;
+                      return PredictionDetailPage(
+                        historyId: id,
+                        initialHistory: history is PredictHistoryModel
+                            ? history
+                            : null,
+                      );
+                    },
+                  ),
+                ],
               ),
             ],
           ),

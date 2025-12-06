@@ -1,5 +1,6 @@
 # app/main.py
 from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 from app.routes import predict
 
 # Inisialisasi Aplikasi FastAPI
@@ -9,6 +10,14 @@ app = FastAPI(
     version="1.0.0",
     docs_url="/docs",  # Swagger UI akan tersedia di http://127.0.0.1:8000/docs
     redoc_url="/redoc",  # ReDoc akan tersedia di http://127.0.0.1:8000/redoc
+)
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  # boleh semua origin
+    allow_credentials=True,
+    allow_methods=["*"],  # IZINKAN OPTIONS, POST, GET, dll
+    allow_headers=["*"],  # izinkan semua header
 )
 
 # Memasukkan semua Routes/Controllers ke dalam aplikasi

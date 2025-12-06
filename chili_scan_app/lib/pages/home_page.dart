@@ -1,5 +1,7 @@
 import 'package:chili_scan_app/common/constants/colors.dart';
+import 'package:chili_scan_app/models/predict_history_model.dart';
 import 'package:chili_scan_app/providers/auth_notifier.dart';
+import 'package:chili_scan_app/services/predict_service.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -12,36 +14,44 @@ class HomePage extends ConsumerStatefulWidget {
 }
 
 class _HomePageState extends ConsumerState<HomePage> {
-  final List<_ScanHistoryItem> _historyItems = const [
-    _ScanHistoryItem(
-      title: 'Matang',
-      description: 'Cabai siap dipanen dengan tingkat kepedasan tinggi.',
-      statusLabel: 'Siap Panen',
-      timestamp: '2 jam lalu',
-      imageUrl:
-          'https://png.pngtree.com/thumb_back/fh260/background/20221022/pngtree-plant-hot-pepper-plant-green-image-photo-image_1274814.jpg',
-      statusColor: Color(0xFFE63B2E),
-    ),
-    _ScanHistoryItem(
-      title: 'Belum Matang',
-      description: 'Masih muda, cocok untuk olahan tumis dan sambal segar.',
-      statusLabel: 'Belum Matang',
-      timestamp: 'Kemarin',
-      imageUrl:
-          'https://png.pngtree.com/thumb_back/fh260/background/20221022/pngtree-plant-hot-pepper-plant-green-image-photo-image_1274814.jpg',
-      statusColor: Color(0xFF3F8CFF),
-    ),
-    _ScanHistoryItem(
-      title: 'Setengah Matang',
-      description:
-          'Sedang dalam proses pematangan, perawatan ekstra disarankan.',
-      statusLabel: 'Setengah Matang',
-      timestamp: '3 hari lalu',
-      imageUrl:
-          'https://png.pngtree.com/thumb_back/fh260/background/20221022/pngtree-plant-hot-pepper-plant-green-image-photo-image_1274814.jpg',
-      statusColor: Color(0xFFF0BC00),
-    ),
-  ];
+  final List<PredictHistoryModel> _historyItems = [];
+  bool _isLoading = false;
+  bool _isError = false;
+  String _errorMessage = '';
+
+  @override
+  void initState() {
+    super.initState();
+
+    _fetchHistory();
+  }
+
+  void _fetchHistory() async {
+    setState(() {
+      _isLoading = true;
+      _isError = false;
+      _errorMessage = '';
+    });
+
+    try {
+      final history = await ref
+          .read(predictionServiceProvider)
+          .getAllHistory(page: 1, limit: 10);
+      setState(() {
+        _historyItems.clear();
+        _historyItems.addAll(history);
+      });
+    } catch (e) {
+      setState(() {
+        _isError = true;
+        _errorMessage = e.toString();
+      });
+    } finally {
+      setState(() {
+        _isLoading = false;
+      });
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -82,7 +92,17 @@ class _HomePageState extends ConsumerState<HomePage> {
                   actionLabel: 'Lihat Semua',
                   onActionTap: () {},
                 ),
-                _buildHistoryList(),
+                if (_isLoading)
+                  const Center(child: CircularProgressIndicator())
+                else if (_isError)
+                  Center(
+                    child: Text(
+                      'Error: $_errorMessage',
+                      style: const TextStyle(color: Colors.red),
+                    ),
+                  )
+                else
+                  _buildHistoryList(),
 
                 // _buildTipsCard(textTheme),
               ],
@@ -155,7 +175,7 @@ class _HomePageState extends ConsumerState<HomePage> {
           ),
           ElevatedButton.icon(
             onPressed: () {
-              context.push('/scanner');
+              context.go('/scanner');
             },
             icon: const Icon(Icons.bolt_rounded),
             label: const Text('Mulai Scan Cepat'),
@@ -183,7 +203,7 @@ class _HomePageState extends ConsumerState<HomePage> {
             subtitle: 'Ambil gambar baru',
             color: primaryColor,
             onTap: () {
-              context.push('/scanner');
+              context.go('/scanner');
             },
           ),
         ),
@@ -195,7 +215,7 @@ class _HomePageState extends ConsumerState<HomePage> {
             subtitle: 'Pilih dari album',
             color: const Color(0xFF00C49A),
             onTap: () {
-              context.push('/scanner');
+              context.go('/scanner');
             },
           ),
         ),
@@ -391,7 +411,7 @@ class _StatCard extends StatelessWidget {
 class _ScanHistoryCard extends StatelessWidget {
   const _ScanHistoryCard({required this.item});
 
-  final _ScanHistoryItem item;
+  final PredictHistoryModel item;
 
   @override
   Widget build(BuildContext context) {
@@ -400,7 +420,7 @@ class _ScanHistoryCard extends StatelessWidget {
       child: Stack(
         children: [
           Image.network(
-            item.imageUrl,
+            item.imageUrl ?? '',
             width: double.infinity,
             height: 200,
             fit: BoxFit.cover,
@@ -430,11 +450,11 @@ class _ScanHistoryCard extends StatelessWidget {
                     vertical: 6,
                   ),
                   decoration: BoxDecoration(
-                    color: item.statusColor.withValues(alpha: 90),
+                    color: Colors.redAccent,
                     borderRadius: BorderRadius.circular(999),
                   ),
                   child: Text(
-                    item.statusLabel,
+                    item.knnResult ?? 'Unknown',
                     style: const TextStyle(
                       color: Colors.white,
                       fontWeight: FontWeight.w600,
@@ -442,19 +462,11 @@ class _ScanHistoryCard extends StatelessWidget {
                   ),
                 ),
                 Text(
-                  item.title,
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 22,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                Text(
-                  item.description,
+                  "Lorem ipsum dolor sit amet, consectetur adipiscing elit.",
                   style: const TextStyle(color: Colors.white70),
                 ),
                 Text(
-                  item.timestamp,
+                  item.createdAt ?? '',
                   style: const TextStyle(color: Colors.white54, fontSize: 12),
                 ),
               ],
