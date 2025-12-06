@@ -9,7 +9,17 @@ import 'package:toastification/toastification.dart';
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
 
-  Supabase.initialize(url: Env.supabaseUrl, anonKey: Env.supabaseAnonKey);
+  Supabase.initialize(
+    url: Env.supabaseUrl,
+    anonKey: Env.supabaseAnonKey,
+    authOptions: FlutterAuthClientOptions(
+      authFlowType: AuthFlowType.pkce,
+      autoRefreshToken: true,
+      localStorage: SharedPreferencesLocalStorage(
+        persistSessionKey: '__supabase_auth_session',
+      ),
+    ),
+  );
 
   runApp(ProviderScope(child: MyApp()));
 }

@@ -80,11 +80,13 @@ class PredictService {
   Future<List<PredictHistoryModel>> getAllHistory({
     int page = 1,
     int limit = 10,
+    required String userId,
   }) async {
     try {
       final response = await _db
           .from('predict_history')
           .select()
+          .eq('user_id', userId)
           .order('created_at', ascending: false)
           .range((page - 1) * limit, page * limit - 1);
 

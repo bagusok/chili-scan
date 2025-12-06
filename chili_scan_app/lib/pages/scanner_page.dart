@@ -96,7 +96,12 @@ class _ScannerPageState extends ConsumerState<ScannerPage> {
         surfaceTintColor: Colors.white,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back_rounded, color: Colors.black87),
-          onPressed: () => context.pop(),
+          onPressed: () => {
+            if (context.canPop())
+              {context.pop()}
+            else
+              {context.replace('/home')},
+          },
         ),
       ),
       body: SafeArea(

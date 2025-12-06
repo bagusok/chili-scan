@@ -2,6 +2,7 @@ import 'package:chili_scan_app/common/constants/colors.dart';
 import 'package:chili_scan_app/models/predict_history_model.dart';
 import 'package:chili_scan_app/providers/auth_notifier.dart';
 import 'package:chili_scan_app/services/predict_service.dart';
+import 'package:chili_scan_app/services/supabase_client.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -34,9 +35,11 @@ class _HomePageState extends ConsumerState<HomePage> {
     });
 
     try {
+      final userId = ref.read(supabase).auth.currentUser?.id;
+
       final history = await ref
           .read(predictionServiceProvider)
-          .getAllHistory(page: 1, limit: 10);
+          .getAllHistory(page: 1, limit: 10, userId: userId!);
       setState(() {
         _historyItems.clear();
         _historyItems.addAll(history);

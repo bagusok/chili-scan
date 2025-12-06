@@ -3,6 +3,7 @@ import 'dart:developer';
 import 'package:chili_scan_app/common/exceptions/api_exception.dart';
 import 'package:chili_scan_app/models/predict_history_model.dart';
 import 'package:chili_scan_app/services/predict_service.dart';
+import 'package:chili_scan_app/services/supabase_client.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 class PredictHistoryState {
@@ -91,11 +92,14 @@ class GetPredictHistoryNotifier extends AsyncNotifier<PredictHistoryState> {
       current.copyWith(isLoadingMore: true, clearError: true),
     );
 
+    final userId = ref.read(supabase).auth.currentUser?.id;
+
     try {
       final nextPage = current.page + 1;
       final histories = await _predictService.getAllHistory(
         page: nextPage,
         limit: _pageSize,
+        userId: userId!,
       );
 
       final updated = current.copyWith(
@@ -120,9 +124,11 @@ class GetPredictHistoryNotifier extends AsyncNotifier<PredictHistoryState> {
     required int page,
     required List<PredictHistoryModel> seed,
   }) async {
+    final userId = ref.read(supabase).auth.currentUser?.id;
     final histories = await _predictService.getAllHistory(
       page: page,
       limit: _pageSize,
+      userId: userId!,
     );
 
     return PredictHistoryState(
