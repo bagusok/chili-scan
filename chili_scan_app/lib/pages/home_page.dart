@@ -477,21 +477,3 @@ class _ScanHistoryCard extends StatelessWidget {
     );
   }
 }
-
-class _ScanHistoryItem {
-  const _ScanHistoryItem({
-    required this.title,
-    required this.description,
-    required this.statusLabel,
-    required this.timestamp,
-    required this.imageUrl,
-    required this.statusColor,
-  });
-
-  final String title;
-  final String description;
-  final String statusLabel;
-  final String timestamp;
-  final String imageUrl;
-  final Color statusColor;
-}
