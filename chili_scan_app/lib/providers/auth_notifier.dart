@@ -66,7 +66,7 @@ class AuthNotifier extends AsyncNotifier {
         email: email,
         password: password,
       );
-      log("Login Success: $response");
+      log("Login Success: ${response.session?.accessToken}");
 
       state = AsyncValue.data(
         local.AuthState(

@@ -1,6 +1,8 @@
 import 'package:chili_scan_app/common/constants/colors.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
+import 'package:image_picker/image_picker.dart';
 
 class ScannerPage extends StatefulWidget {
   const ScannerPage({super.key});
@@ -10,27 +12,59 @@ class ScannerPage extends StatefulWidget {
 }
 
 class _ScannerPageState extends State<ScannerPage> {
+  final ImagePicker _imagePicker = ImagePicker();
+  XFile? _selectedImage;
   String? _selectedImageLabel;
+  Uint8List? _previewBytes;
   bool _isUploading = false;
 
-  Future<void> _pickImage(String source) async {
-    // TODO: Integrate with camera/gallery picker.
-    setState(
-      () => _selectedImageLabel =
-          'Foto dari $source (${DateTime.now().hour}:${DateTime.now().minute})',
-    );
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('Berhasil memilih gambar dari $source')),
-    );
+  Future<void> _pickImage(ImageSource source) async {
+    final sourceLabel = source == ImageSource.camera ? 'Kamera' : 'Galeri';
+    try {
+      final XFile? image = await _imagePicker.pickImage(
+        source: source,
+        maxWidth: 2048,
+        maxHeight: 2048,
+        imageQuality: 90,
+      );
+
+      if (image == null) return;
+
+      final bytes = await image.readAsBytes();
+      setState(() {
+        _selectedImage = image;
+        _previewBytes = bytes;
+        _selectedImageLabel =
+            'Foto dari $sourceLabel (${DateTime.now().hour}:${DateTime.now().minute})';
+      });
+
+      _showSnackBar('Berhasil memilih gambar dari $sourceLabel');
+    } on PlatformException catch (error) {
+      _showSnackBar(
+        'Gagal mengakses $sourceLabel: ${error.message ?? 'Coba ulangi'}',
+        isError: true,
+      );
+    } catch (_) {
+      _showSnackBar('Pilihan gambar dibatalkan', isError: true);
+    }
   }
 
   Future<void> _sendToServer() async {
-    if (_selectedImageLabel == null || _isUploading) return;
+    if (_selectedImage == null || _isUploading) return;
     setState(() => _isUploading = true);
     await Future.delayed(const Duration(seconds: 2));
     setState(() => _isUploading = false);
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(content: Text('Foto terkirim. Tunggu analisis server.')),
+    );
+  }
+
+  void _showSnackBar(String message, {bool isError = false}) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        backgroundColor: isError ? Colors.red[600] : null,
+      ),
     );
   }
 
@@ -68,7 +102,7 @@ class _ScannerPageState extends State<ScannerPage> {
               _buildInfoSteps(theme),
               const SizedBox(height: 32),
               ElevatedButton.icon(
-                onPressed: _selectedImageLabel == null || _isUploading
+                onPressed: _selectedImage == null || _isUploading
                     ? null
                     : _sendToServer,
                 icon: _isUploading
@@ -125,8 +159,12 @@ class _ScannerPageState extends State<ScannerPage> {
                 style: BorderStyle.solid,
                 width: 1.2,
               ),
-              image: _selectedImageLabel == null
-                  ? const DecorationImage(
+              image: _previewBytes != null
+                  ? DecorationImage(
+                      image: MemoryImage(_previewBytes!),
+                      fit: BoxFit.cover,
+                    )
+                  : const DecorationImage(
                       image: NetworkImage(
                         'https://images.unsplash.com/photo-1481396924383-d380ac23929a?auto=format&fit=crop&w=900&q=80',
                       ),
@@ -135,10 +173,9 @@ class _ScannerPageState extends State<ScannerPage> {
                         Colors.black26,
                         BlendMode.darken,
                       ),
-                    )
-                  : null,
+                    ),
             ),
-            child: _selectedImageLabel == null
+            child: _previewBytes == null
                 ? Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: const [
@@ -157,11 +194,26 @@ class _ScannerPageState extends State<ScannerPage> {
                       ),
                     ],
                   )
-                : Center(
-                    child: Text(
-                      _selectedImageLabel!,
-                      textAlign: TextAlign.center,
-                      style: const TextStyle(fontWeight: FontWeight.w600),
+                : Align(
+                    alignment: Alignment.bottomCenter,
+                    child: Container(
+                      margin: const EdgeInsets.all(12),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 8,
+                      ),
+                      decoration: BoxDecoration(
+                        color: Colors.black54,
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Text(
+                        _selectedImageLabel ?? 'Foto siap dikirim',
+                        textAlign: TextAlign.center,
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
                     ),
                   ),
           ),
@@ -210,7 +262,7 @@ class _ScannerPageState extends State<ScannerPage> {
       children: [
         Expanded(
           child: OutlinedButton.icon(
-            onPressed: () => _pickImage('Kamera'),
+            onPressed: () => _pickImage(ImageSource.camera),
             icon: const Icon(Icons.photo_camera_rounded),
             label: const Text('Ambil Foto'),
             style: OutlinedButton.styleFrom(
@@ -226,7 +278,7 @@ class _ScannerPageState extends State<ScannerPage> {
         const SizedBox(width: 16),
         Expanded(
           child: ElevatedButton.icon(
-            onPressed: () => _pickImage('Galeri'),
+            onPressed: () => _pickImage(ImageSource.gallery),
             icon: const Icon(Icons.photo_library_rounded),
             label: const Text('Pilih Galeri'),
             style: ElevatedButton.styleFrom(
