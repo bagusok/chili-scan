@@ -21,6 +21,8 @@ class PredictService {
   Future<PredictHistoryModel> predict({required XFile image}) async {
     try {
       MultipartFile multipartFile;
+      // base url
+      log('Making prediction request to: ${_httpClient.options.baseUrl}');
 
       if (kIsWeb) {
         // WEB: Tidak bisa menggunakan path, ambil bytes

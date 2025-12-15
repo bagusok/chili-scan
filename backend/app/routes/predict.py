@@ -3,6 +3,8 @@ import random
 import time
 from fastapi import APIRouter, UploadFile, File, HTTPException, Depends
 import uuid
+import cv2
+import numpy as np
 from app.db.client import get_supabase_clients
 from app.services import storage
 from app.schemas import (
@@ -63,13 +65,27 @@ async def check_health():
 async def run_prediction(
     file: UploadFile = File(...), user: dict = Depends(verify_supabase_token)
 ):
-    """Unggah gambar cabai asli lalu simulasi prediksi KNN & SVM."""
+    """Unggah gambar cabai asli lalu prediksi KNN & SVM."""
     try:
+        # Baca gambar dari upload
+        image_bytes = await file.read()
+        nparr = np.frombuffer(image_bytes, np.uint8)
+        img_bgr = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
+
+        if img_bgr is None:
+            raise HTTPException(
+                status_code=400,
+                detail="Gagal membaca gambar. Pastikan file adalah gambar yang valid.",
+            )
+
+        # Upload gambar ke storage
+        await file.seek(0)  # Reset file pointer untuk upload
         upload_data = await storage.upload_file_to_supabase(file)
 
+        # Prediksi dengan kedua model secara paralel
         knn_prediction, svm_prediction = await asyncio.gather(
-            PredictService.predict_knn(),
-            PredictService.predict_svm(),
+            PredictService.predict_knn(img_bgr),
+            PredictService.predict_svm(img_bgr),
         )
 
         save_to_db = (

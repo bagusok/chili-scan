@@ -6,10 +6,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:toastification/toastification.dart';
 
-void main() {
+void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  Supabase.initialize(
+  await Supabase.initialize(
     url: Env.supabaseUrl,
     anonKey: Env.supabaseAnonKey,
     authOptions: FlutterAuthClientOptions(
